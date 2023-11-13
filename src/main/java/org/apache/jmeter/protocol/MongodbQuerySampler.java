@@ -2,6 +2,7 @@ package org.apache.jmeter.protocol;
 
 import com.alibaba.fastjson.JSONObject;
 import com.mongodb.client.MongoCursor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.AbstractJavaSamplerClient;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerClient;
@@ -13,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.Map;
-
+@Slf4j
 public class MongodbQuerySampler implements JavaSamplerClient {
 
 
@@ -38,18 +39,20 @@ public class MongodbQuerySampler implements JavaSamplerClient {
         collection = context.getParameter("collection");
         key = context.getParameter("key");
         keyValue = context.getParameter("keyValue");
+        mc = new MongodbClient();
+        mc.ConnectionMongoClient(host, port, db);
 
+        log.info("setupTest query");
     }
 
     //核心处理逻辑
     @Override
     public SampleResult runTest(JavaSamplerContext javaSamplerContext) {
 
+        log.info("runTest query");
         SampleResult result = new SampleResult();
         result.setSampleLabel("MongodbQuerySampler");
         result.sampleStart();
-        mc = new MongodbClient();
-        mc.ConnectionMongoClient(host, port, db);
         mongoCursor = mc.query(collection, key, keyValue);
 
         //判断游标有没有数据
@@ -64,7 +67,7 @@ public class MongodbQuerySampler implements JavaSamplerClient {
             result.setResponseData("return data is null".getBytes());
         }
 
-        mc.closeConnection();
+
         result.setSuccessful(true);
         result.sampleEnd();
 
@@ -74,7 +77,8 @@ public class MongodbQuerySampler implements JavaSamplerClient {
 
     @Override
     public void teardownTest(JavaSamplerContext javaSamplerContext) {
-
+        log.info("teardownTest query");
+        mc.closeConnection();
     }
 
     //参数默认值展示在gui
